@@ -54,7 +54,22 @@ public class JobService {
         jobRepository.deleteById(id);
     }
 
-    private  JobResponse mapToResponse(Job job) {
+    public JobResponse pauseJob(UUID id) {
+        Job job = jobRepository.findById(id).orElseThrow(() -> new JobNotFoundException("Job Not Found"));
+        job.setStatus(JobStatus.PAUSED);
+        Job savedJob = jobRepository.save(job);
+        return mapToResponse(savedJob);
+    }
+
+    public JobResponse resumeJob(UUID id) {
+        Job job = jobRepository.findById(id).orElseThrow(() -> new JobNotFoundException("Job Not Found"));
+        job.setStatus(JobStatus.ACTIVE);
+        job.setNextRunTime(CronUtils.calculateNextRunTime(job.getCronExpression()));
+        Job savedJob = jobRepository.save(job);
+        return mapToResponse(savedJob);
+    }
+
+    private JobResponse mapToResponse(Job job) {
         JobResponse jobResponse = new JobResponse();
         jobResponse.setId(job.getId());
         jobResponse.setName(job.getName());

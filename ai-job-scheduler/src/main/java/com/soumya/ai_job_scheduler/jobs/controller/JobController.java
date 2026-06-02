@@ -42,5 +42,13 @@ public class JobController {
     public void deleteJobById(@PathVariable UUID id) {
         jobService.deleteJobById(id);
     }
+    @PatchMapping("/{id}/pause")
+    public JobResponse pauseJob(@PathVariable UUID id) {
+        return jobService.pauseJob(id);
+    }
+    @PatchMapping("/{id}/resume")
+    public JobResponse resumeJob(@PathVariable UUID id) {
+        return jobService.resumeJob(id);
+    }
 }
 

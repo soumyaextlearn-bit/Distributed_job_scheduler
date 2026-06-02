@@ -6,10 +6,10 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
-public class AsyncJobExcutor {
+public class AsyncJobExecutor {
    private final JobExecutionService jobExecutionService;
 
-   public AsyncJobExcutor(
+   public AsyncJobExecutor(
            JobExecutionService jobExecutionService
    ) {
        this.jobExecutionService = jobExecutionService;
