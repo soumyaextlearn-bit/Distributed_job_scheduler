@@ -66,7 +66,8 @@ public class JobExecutionService {
         }
     }
 
-    public void executeJob(Job job){
+    public void executeJob(UUID jobId) {
+        Job job = jobRepository.findById(jobId).orElseThrow();
         JobExecution jobExecution = new JobExecution();
         jobExecution.setJob(job);
         jobExecution.setId(UUID.randomUUID());

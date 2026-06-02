@@ -2,9 +2,7 @@ package com.soumya.ai_job_scheduler.jobs.scheduler;
 
 import com.soumya.ai_job_scheduler.jobs.entity.Job;
 import com.soumya.ai_job_scheduler.jobs.entity.JobStatus;
-import com.soumya.ai_job_scheduler.jobs.executor.AsyncJobExecutor;
-import com.soumya.ai_job_scheduler.jobs.executor.CommandExecutor;
-import com.soumya.ai_job_scheduler.jobs.repository.JobExecutionRepository;
+import com.soumya.ai_job_scheduler.jobs.queue.JobQueueService;
 import com.soumya.ai_job_scheduler.jobs.repository.JobRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -16,35 +14,26 @@ import java.util.List;
 public class JobSchedulerService {
 
     private final JobRepository jobRepository;
-    private final AsyncJobExecutor asyncJobExcutor;
+    private final JobQueueService jobQueueService;
 
     public JobSchedulerService(
             JobRepository jobRepository,
-            JobExecutionRepository jobExecutionRepository,
-            CommandExecutor commandExecutor,
-            AsyncJobExecutor asyncJobExcutor
+            JobQueueService jobQueueService
     )
     {
         this.jobRepository = jobRepository;
-        this.asyncJobExcutor = asyncJobExcutor;
+        this.jobQueueService = jobQueueService;
     }
     @Scheduled(fixedRate = 30000)
     public void pollAndExecuteJob(){
         System.out.println("Scheduler polling jobs");
 
-        List< Job> activeJobs = jobRepository.findAll()
-                .stream()
-                .filter(job -> job.getStatus() == JobStatus.ACTIVE
-                &&
-                job.getNextRunTime() != null
-                &&
-                !job.getNextRunTime().isAfter(LocalDateTime.now()))
-                .toList();
+        List<Job> runnableJobs = jobRepository.findRunnableJobs(LocalDateTime.now());
 
-        for(Job job : activeJobs){
+        for(Job job : runnableJobs){
             job.setStatus(JobStatus.RUNNING);
             jobRepository.save(job);
-            asyncJobExcutor.execute(job);
+            jobQueueService.enqueue(job.getId());
         }
     }
 

@@ -41,4 +41,6 @@ public class Job {
 
     @Column(name = "current_retry_count")
     private Integer currentRetryCount;
+    @Version
+    private Long version;
 }
