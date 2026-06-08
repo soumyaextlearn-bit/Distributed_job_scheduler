@@ -3,6 +3,10 @@ spring:
     url: jdbc:postgresql://localhost:5432/scheduler_db
     username: admin
     password: admin
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
   jpa:
     hibernate:
@@ -10,3 +14,10 @@ spring:
 
   flyway:
     enabled: true
+
+scheduler:
+  worker:
+    count: 4
+  poll-interval: 30000
+  redis:
+    dequeue-timeout: 5

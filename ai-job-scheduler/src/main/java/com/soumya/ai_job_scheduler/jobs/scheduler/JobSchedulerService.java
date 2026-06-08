@@ -24,7 +24,7 @@ public class JobSchedulerService {
         this.jobRepository = jobRepository;
         this.jobQueueService = jobQueueService;
     }
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRateString = "${scheduler.poll-interval}")
     public void pollAndExecuteJob(){
         System.out.println("Scheduler polling jobs");
 

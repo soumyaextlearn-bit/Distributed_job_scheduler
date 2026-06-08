@@ -7,6 +7,7 @@ import com.soumya.ai_job_scheduler.jobs.entity.JobExecution;
 import com.soumya.ai_job_scheduler.jobs.entity.JobStatus;
 import com.soumya.ai_job_scheduler.jobs.executor.CommandExecutor;
 import com.soumya.ai_job_scheduler.jobs.executor.ExecutionResult;
+import com.soumya.ai_job_scheduler.jobs.queue.JobQueueService;
 import com.soumya.ai_job_scheduler.jobs.repository.JobExecutionRepository;
 import com.soumya.ai_job_scheduler.jobs.repository.JobRepository;
 import com.soumya.ai_job_scheduler.jobs.util.CronUtils;
@@ -24,15 +25,18 @@ public class JobExecutionService {
     private final JobExecutionRepository jobExecutionRepository;
     private final JobRepository jobRepository;
     private final CommandExecutor commandExecutor;
+    private final JobQueueService jobQueueService;
 
     public JobExecutionService(
             JobExecutionRepository jobExecutionRepository,
             JobRepository jobRepository,
-            CommandExecutor commandExecutor
+            CommandExecutor commandExecutor,
+            JobQueueService jobQueueService
     ){
         this.jobExecutionRepository = jobExecutionRepository;
         this.jobRepository = jobRepository;
         this.commandExecutor = commandExecutor;
+        this.jobQueueService = jobQueueService;
     }
     public List<ExecutionResponse> getExecutions(UUID jobId) {
         return jobExecutionRepository
@@ -63,6 +67,8 @@ public class JobExecutionService {
             job.setStatus(JobStatus.ACTIVE);
         }else{
             job.setStatus(JobStatus.FAILED);
+            System.out.println("adding to the failed queue");
+            jobQueueService.enqueueFailed(job.getId());
         }
     }
 

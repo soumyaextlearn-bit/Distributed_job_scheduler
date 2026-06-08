@@ -1,6 +1,7 @@
 package com.soumya.ai_job_scheduler.jobs.repository;
 
 import com.soumya.ai_job_scheduler.jobs.entity.Job;
+import com.soumya.ai_job_scheduler.jobs.entity.JobStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -26,4 +27,8 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
         WHERE j.id = :id
         """)
     Optional<Job> lockJob(@Param("id") UUID id);
+    @Query("""
+            SELECT COUNT(*) FROM Job WHERE status = :jobStatus
+            """)
+    long countByStatus(@Param("jobStatus") JobStatus jobStatus);
 }
