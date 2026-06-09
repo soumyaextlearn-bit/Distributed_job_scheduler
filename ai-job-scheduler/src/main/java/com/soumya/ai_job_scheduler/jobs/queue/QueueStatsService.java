@@ -47,11 +47,15 @@ public class QueueStatsService {
         List<UUID> failedJobs = jobQueueService.getFailedJobs();
 
         for(UUID id : failedJobs){
-            Job job = jobRepository.findById(id).orElseThrow();
+            Job job = jobRepository.findById(id).orElse(null);
+            if(job == null){
+                System.out.println("Failed job : " + id + " not found in database.");
+                continue;
+            }
             job.setStatus(JobStatus.ACTIVE);
             job.setCurrentRetryCount(0);
             jobRepository.save(job);
         }
-        jobQueueService.replayFailedJobs();
+        jobQueueService.clearFailedJobs();
     }
 }

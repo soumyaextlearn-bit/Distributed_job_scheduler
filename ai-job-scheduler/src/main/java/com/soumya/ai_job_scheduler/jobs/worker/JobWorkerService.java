@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,17 +35,33 @@ public class JobWorkerService {
                 System.out.println("worker started : " + Thread.currentThread().getName());
                 while (running) {
                     try {
+//                        System.out.println(
+//                                Thread.currentThread().getName()
+//                                        + " waiting"
+//                        );
+
                         UUID jobId = jobQueueService.dequeue();
+                        if(jobId == null){
+                            continue;
+                        }
                         jobExecutionService.executeJob(jobId);
-                    }
-                    catch (InterruptedException e){
-                        Thread.currentThread().interrupt();
-                        break;
+
                     }
                     catch (Exception e){
+
                         if(!running){
+                            System.out.println(
+                                    Thread.currentThread().getName()
+                                            + " stopping"
+                            );
                             break;
                         }
+
+                        System.out.println(
+                                Thread.currentThread().getName()
+                                        + " worker error"
+                        );
+
                         e.printStackTrace();
                     }
                 }

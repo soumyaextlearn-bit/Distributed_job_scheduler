@@ -16,5 +16,5 @@ public interface JobQueueService {
 
     List<UUID> getFailedJobs();
 
-    void replayFailedJobs();
+    void clearFailedJobs();
 }

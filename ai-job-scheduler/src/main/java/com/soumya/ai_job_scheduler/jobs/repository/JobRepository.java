@@ -31,4 +31,6 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
             SELECT COUNT(*) FROM Job WHERE status = :jobStatus
             """)
     long countByStatus(@Param("jobStatus") JobStatus jobStatus);
+
+    List<Job> findAllByStatus(JobStatus jobStatus);
 }

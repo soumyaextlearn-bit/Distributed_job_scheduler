@@ -31,7 +31,7 @@ public class JobSchedulerService {
         List<Job> runnableJobs = jobRepository.findRunnableJobs(LocalDateTime.now());
 
         for(Job job : runnableJobs){
-            job.setStatus(JobStatus.RUNNING);
+            job.setStatus(JobStatus.QUEUED);
             jobRepository.save(job);
             jobQueueService.enqueue(job.getId());
         }

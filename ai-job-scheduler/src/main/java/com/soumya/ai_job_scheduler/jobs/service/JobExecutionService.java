@@ -12,6 +12,7 @@ import com.soumya.ai_job_scheduler.jobs.repository.JobExecutionRepository;
 import com.soumya.ai_job_scheduler.jobs.repository.JobRepository;
 import com.soumya.ai_job_scheduler.jobs.util.CronUtils;
 
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -63,6 +64,11 @@ public class JobExecutionService {
 
         if(retries < job.getRetryCount()){
             job.setCurrentRetryCount(retries+1);
+            job.setNextRunTime(
+                    CronUtils.calculateNextRunTime(
+                            job.getCronExpression()
+                    )
+            );
             System.out.println("Retry Count : " + job.getCurrentRetryCount());
             job.setStatus(JobStatus.ACTIVE);
         }else{
@@ -74,6 +80,8 @@ public class JobExecutionService {
 
     public void executeJob(UUID jobId) {
         Job job = jobRepository.findById(jobId).orElseThrow();
+        job.setStatus(JobStatus.RUNNING);
+        jobRepository.save(job);
         JobExecution jobExecution = new JobExecution();
         jobExecution.setJob(job);
         jobExecution.setId(UUID.randomUUID());
@@ -82,7 +90,7 @@ public class JobExecutionService {
         jobExecution.setWorkerThread(Thread.currentThread().getName());
         jobExecution.setAttemptNumber(job.getCurrentRetryCount()+1);
         jobExecutionRepository.save(jobExecution);
-
+        job = jobRepository.findById(jobId).orElseThrow();
         try{
             System.out.println("executing job " + job.getName());
             ExecutionResult result = commandExecutor.execute(job.getCommand());
@@ -90,6 +98,11 @@ public class JobExecutionService {
             if(result.isSuccess()){
                 jobExecution.setStatus(ExecutionStatus.SUCCESS);
                 job.setCurrentRetryCount(0);
+                job.setNextRunTime(
+                        CronUtils.calculateNextRunTime(
+                                job.getCronExpression()
+                        )
+                );
                 job.setStatus(JobStatus.ACTIVE);
             }else {
                 jobExecution.setStatus(ExecutionStatus.FAILED);
@@ -100,28 +113,42 @@ public class JobExecutionService {
             jobExecution.setStatus(ExecutionStatus.FAILED);
             jobExecution.setLogs(e.getMessage());
             handleJobFailure(job);
-        }
+        } finally {
+            if(job.getStatus()
+                    == JobStatus.RUNNING){
 
+                job.setStatus(
+                        JobStatus.FAILED
+                );
+            }
+            Duration duration =
+                    Duration.between(
+                            jobExecution
+                                    .getStartedAt(),
+                            LocalDateTime.now()
+                    );
 
-        System.out.println(
-                "Job Finished : "
-                        + job.getName()
-                        + " Status : "
-                        + jobExecution.getStatus()
-        );
-        Duration jobExecutionDuration =  Duration.between(jobExecution.getStartedAt(), LocalDateTime.now());
-        jobExecution.setExecutionDurationMs(jobExecutionDuration.toMillis());
-        jobExecution.setCompletedAt(LocalDateTime.now());
-        jobExecutionRepository.save(jobExecution);
+            jobExecution
+                    .setExecutionDurationMs(
+                            duration.toMillis()
+                    );
 
-        if(job.getStatus() == JobStatus.ACTIVE) {
-            job.setNextRunTime(
-                    CronUtils.calculateNextRunTime(
-                            job.getCronExpression()
-                    )
+            jobExecution.setCompletedAt(
+                    LocalDateTime.now()
             );
-        }
 
-        jobRepository.save(job);
+            System.out.println(
+                    "Saving Job : "
+                            + job.getName()
+                            + " Final Status : "
+                            + job.getStatus()
+            );
+
+            jobExecutionRepository
+                    .save(jobExecution);
+
+            jobRepository
+                    .save(job);
+        }
     }
 }

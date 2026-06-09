@@ -40,7 +40,7 @@ public class RedisJobQueueService implements JobQueueService {
     public UUID dequeue() throws InterruptedException {
         String jobId = redisTemplate.opsForList().rightPop(QUEUE_NAME, Duration.ofSeconds(dequeueDelaySeconds));
         if(jobId == null) {
-            throw new InterruptedException("Queue is empty");
+            return null;
         }
         return UUID.fromString(jobId);
     }
@@ -68,14 +68,7 @@ public class RedisJobQueueService implements JobQueueService {
     }
 
     @Override
-    public void replayFailedJobs() {
-        while (true) {
-            String jodId = redisTemplate.opsForList().rightPop(FAILED_QUEUE);
-            if(jodId == null) {
-                break;
-            }
-            redisTemplate.opsForList().leftPush(QUEUE_NAME, jodId);
-            System.out.println("Replayed JOB ID : "+jodId);
-        }
+    public void clearFailedJobs() {
+        redisTemplate.opsForList().trim(FAILED_QUEUE, 1,0);
     }
 }
